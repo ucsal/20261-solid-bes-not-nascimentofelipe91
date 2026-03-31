@@ -4,15 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import br.com.ucsal.service.ParticipanteService;
+import br.com.ucsal.service.ProvaService;
+
 public class App {
 
-	static long proximoParticipanteId = 1;
+//	static long proximoParticipanteId = 1;
 	static long proximaProvaId = 1;
 	static long proximaQuestaoId = 1;
 	static long proximaTentativaId = 1;
 
 	static final List<Participante> participantes = new ArrayList<>();
+	static ParticipanteService participanteService = new ParticipanteService(participantes);
 	static final List<Prova> provas = new ArrayList<>();
+	static ProvaService provaService = new ProvaService(provas);
 	static final List<Questao> questoes = new ArrayList<>();
 	static final List<Tentativa> tentativas = new ArrayList<>();
 
@@ -48,40 +53,29 @@ public class App {
 
 	static void cadastrarParticipante() {
 		System.out.print("Nome: ");
-		var nome = in.nextLine();
+	    var nome = in.nextLine();
 
-		System.out.print("Email (opcional): ");
-		var email = in.nextLine();
+	    System.out.print("Email: ");
+	    var email = in.nextLine();
 
-		if (nome == null || nome.isBlank()) {
-			System.out.println("nome inválido");
-			return;
-		}
-
-		var p = new Participante();
-		p.setId(proximoParticipanteId++);
-		p.setNome(nome);
-		p.setEmail(email);
-
-		participantes.add(p);
-		System.out.println("Participante cadastrado: " + p.getId());
+	    try {
+	        var p = participanteService.cadastrar(nome, email);
+	        System.out.println("Participante cadastrado: " + p.getId());
+	    } catch (Exception e) {
+	        System.out.println(e.getMessage());
+	    }
 	}
 
 	static void cadastrarProva() {
 		System.out.print("Título da prova: ");
-		var titulo = in.nextLine();
+	    var titulo = in.nextLine();
 
-		if (titulo == null || titulo.isBlank()) {
-			System.out.println("título inválido");
-			return;
-		}
-
-		var prova = new Prova();
-		prova.setId(proximaProvaId++);
-		prova.setTitulo(titulo);
-
-		provas.add(prova);
-		System.out.println("Prova criada: " + prova.getId());
+	    try {
+	        var prova = provaService.cadastrar(titulo);
+	        System.out.println("Prova criada: " + prova.getId());
+	    } catch (Exception e) {
+	        System.out.println(e.getMessage());
+	    }
 	}
 
 	static void cadastrarQuestao() {
