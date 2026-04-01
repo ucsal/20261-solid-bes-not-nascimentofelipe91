@@ -5,21 +5,9 @@ import java.util.Arrays;
 public class Questao {
 
 	private long id;
-	private long provaId;
-
 	private String enunciado;
 	private String[] alternativas = new String[5];
 	private char alternativaCorreta;
-
-	private String fenInicial;
-
-	public String getFenInicial() {
-		return fenInicial;
-	}
-
-	public void setFenInicial(String fenInicial) {
-		this.fenInicial = fenInicial;
-	}
 
 	public long getId() {
 		return id;
@@ -27,14 +15,6 @@ public class Questao {
 
 	public void setId(long id) {
 		this.id = id;
-	}
-
-	public long getProvaId() {
-		return provaId;
-	}
-
-	public void setProvaId(long provaId) {
-		this.provaId = provaId;
 	}
 
 	public String getEnunciado() {
@@ -76,4 +56,11 @@ public class Questao {
 		return up;
 	}
 
+	public void exibir() {
+		System.out.println(enunciado);
+
+		for (var alt : alternativas) {
+			System.out.println(alt);
+		}
+	}
 }
