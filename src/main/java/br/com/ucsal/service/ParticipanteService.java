@@ -27,4 +27,15 @@ public class ParticipanteService {
         participantes.add(p);
         return p;
     }
+	
+	public List<Participante> listarTodos() {
+	    return List.copyOf(participantes);
+	}
+
+	public boolean existePorId(Long id) {
+	    if (id == null) return false;
+
+	    return participantes.stream()
+	        .anyMatch(p -> id.equals(p.getId()));
+	}
 }

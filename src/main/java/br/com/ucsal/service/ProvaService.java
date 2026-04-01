@@ -19,11 +19,19 @@ public class ProvaService {
 		}
 
 		var prova = new Prova();
-		prova.setId(proximoId++);
+		prova.setId(++proximoId);
 		prova.setTitulo(titulo);
 
 		provas.add(prova);
 		return prova;
+	}
+
+	public List<Prova> listarTodas() {
+		return List.copyOf(provas);
+	}
+
+	public boolean existePorId(Long id) {
+		return id != null && provas.stream().anyMatch(p -> id.equals(p.getId()));
 	}
 
 }

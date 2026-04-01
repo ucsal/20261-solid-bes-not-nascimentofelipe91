@@ -6,6 +6,7 @@ import java.util.Scanner;
 
 import br.com.ucsal.service.ParticipanteService;
 import br.com.ucsal.service.ProvaService;
+import br.com.ucsal.service.TentativaService;
 
 public class App {
 
@@ -20,6 +21,7 @@ public class App {
 	static ProvaService provaService = new ProvaService(provas);
 	static final List<Questao> questoes = new ArrayList<>();
 	static final List<Tentativa> tentativas = new ArrayList<>();
+	static TentativaService tentativaService = new TentativaService(tentativas, questoes);
 
 	private static final Scanner in = new Scanner(System.in);
 
@@ -53,29 +55,29 @@ public class App {
 
 	static void cadastrarParticipante() {
 		System.out.print("Nome: ");
-	    var nome = in.nextLine();
+		var nome = in.nextLine();
 
-	    System.out.print("Email: ");
-	    var email = in.nextLine();
+		System.out.print("Email: ");
+		var email = in.nextLine();
 
-	    try {
-	        var p = participanteService.cadastrar(nome, email);
-	        System.out.println("Participante cadastrado: " + p.getId());
-	    } catch (Exception e) {
-	        System.out.println(e.getMessage());
-	    }
+		try {
+			var p = participanteService.cadastrar(nome, email);
+			System.out.println("Participante cadastrado: " + p.getId());
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
 	}
 
 	static void cadastrarProva() {
 		System.out.print("Título da prova: ");
-	    var titulo = in.nextLine();
+		var titulo = in.nextLine();
 
-	    try {
-	        var prova = provaService.cadastrar(titulo);
-	        System.out.println("Prova criada: " + prova.getId());
-	    } catch (Exception e) {
-	        System.out.println(e.getMessage());
-	    }
+		try {
+			var prova = provaService.cadastrar(titulo);
+			System.out.println("Prova criada: " + prova.getId());
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
 	}
 
 	static void cadastrarQuestao() {
@@ -119,7 +121,6 @@ public class App {
 		System.out.println("Questão cadastrada: " + q.getId() + " (na prova " + provaId + ")");
 	}
 
-
 	static void aplicarProva() {
 		if (participantes.isEmpty()) {
 			System.out.println("cadastre participantes primeiro");
@@ -138,88 +139,79 @@ public class App {
 		if (provaId == null)
 			return;
 
-		var questoesDaProva = questoes.stream().filter(q -> q.getProvaId() == provaId).toList();
+		try {
+			var tentativa = tentativaService.aplicar(participanteId, provaId);
 
-		if (questoesDaProva.isEmpty()) {
-			System.out.println("esta prova não possui questões cadastradas");
-			return;
-		}
+			System.out.println("\n--- Início da Prova ---");
 
-		var tentativa = new Tentativa();
-		tentativa.setId(proximaTentativaId++);
-		tentativa.setParticipanteId(participanteId);
-		tentativa.setProvaId(provaId);
+			var questoesDaProva = questoes.stream().filter(q -> q.getProvaId() == provaId).toList();
 
-		System.out.println("\n--- Início da Prova ---");
+			for (var q : questoesDaProva) {
+				System.out.println("\nQuestão #" + q.getId());
+				System.out.println(q.getEnunciado());
 
-		for (var q : questoesDaProva) {
-			System.out.println("\nQuestão #" + q.getId());
-			System.out.println(q.getEnunciado());
+//				System.out.println("Posição inicial:");
+//				imprimirTabuleiroFen(q.getFenInicial());
 
-			System.out.println("Posição inicial:");
-			imprimirTabuleiroFen(q.getFenInicial());
+				for (var alt : q.getAlternativas()) {
+					System.out.println(alt);
+				}
 
-			for (var alt : q.getAlternativas()) {
-			    System.out.println(alt);
+				System.out.print("Sua resposta (A–E): ");
+				char marcada;
+				try {
+					marcada = Questao.normalizar(in.nextLine().trim().charAt(0));
+				} catch (Exception e) {
+					System.out.println("resposta inválida (marcando como errada)");
+					marcada = 'X';
+				}
+
+				var r = new Resposta();
+				r.setQuestaoId(q.getId());
+				r.setAlternativaMarcada(marcada);
+				r.setCorreta(q.isRespostaCorreta(marcada));
+
+				tentativa.getRespostas().add(r);
 			}
 
-			System.out.print("Sua resposta (A–E): ");
-			char marcada;
-			try {
-				marcada = Questao.normalizar(in.nextLine().trim().charAt(0));
-			} catch (Exception e) {
-				System.out.println("resposta inválida (marcando como errada)");
-				marcada = 'X';
-			}
+			System.out.println("\n--- Fim da Prova ---");
+			System.out.println("Nota: " + tentativa.calcularNota());
 
-			var r = new Resposta();
-			r.setQuestaoId(q.getId());
-			r.setAlternativaMarcada(marcada);
-			r.setCorreta(q.isRespostaCorreta(marcada));
-
-			tentativa.getRespostas().add(r);
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
 		}
-
-		tentativas.add(tentativa);
-
-		int nota = calcularNota(tentativa);
-		System.out.println("\n--- Fim da Prova ---");
-		System.out.println("Nota (acertos): " + nota + " / " + tentativa.getRespostas().size());
-	}
-
-	public static int calcularNota(Tentativa tentativa) {
-		int acertos = 0;
-		for (var r : tentativa.getRespostas()) {
-			if (r.isCorreta())
-				acertos++;
-		}
-		return acertos;
 	}
 
 	static void listarTentativas() {
 		System.out.println("\n--- Tentativas ---");
-		for (var t : tentativas) {
+
+		var lista = tentativaService.listarTodas();
+
+		for (var t : lista) {
 			System.out.printf("#%d | participante=%d | prova=%d | nota=%d/%d%n", t.getId(), t.getParticipanteId(),
-					t.getProvaId(), calcularNota(t), t.getRespostas().size());
+					t.getProvaId(), t.calcularNota(), t.getRespostas().size());
 		}
 	}
 
-
 	static Long escolherParticipante() {
 		System.out.println("\nParticipantes:");
-		for (var p : participantes) {
+
+		for (var p : participanteService.listarTodos()) {
 			System.out.printf("  %d) %s%n", p.getId(), p.getNome());
 		}
+
 		System.out.print("Escolha o id do participante: ");
 
 		try {
 			long id = Long.parseLong(in.nextLine());
-			boolean existe = participantes.stream().anyMatch(p -> p.getId() == id);
-			if (!existe) {
+
+			if (!participanteService.existePorId(id)) {
 				System.out.println("id inválido");
 				return null;
 			}
+
 			return id;
+
 		} catch (Exception e) {
 			System.out.println("entrada inválida");
 			return null;
@@ -228,19 +220,23 @@ public class App {
 
 	static Long escolherProva() {
 		System.out.println("\nProvas:");
-		for (var p : provas) {
+
+		for (var p : provaService.listarTodas()) {
 			System.out.printf("  %d) %s%n", p.getId(), p.getTitulo());
 		}
+
 		System.out.print("Escolha o id da prova: ");
 
 		try {
 			long id = Long.parseLong(in.nextLine());
-			boolean existe = provas.stream().anyMatch(p -> p.getId() == id);
-			if (!existe) {
+
+			if (!provaService.existePorId(id)) {
 				System.out.println("id inválido");
 				return null;
 			}
+
 			return id;
+
 		} catch (Exception e) {
 			System.out.println("entrada inválida");
 			return null;
@@ -280,7 +276,6 @@ public class App {
 		System.out.println("    a b c d e f g h");
 		System.out.println();
 	}
-
 
 	static void seed() {
 
